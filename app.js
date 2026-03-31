@@ -2,6 +2,7 @@
    Link Beam STM Designer
    Based on: El-Zoughiby et al., Engineering Structures 299 (2024)
    ACI 318-19 Ch. 23 Strut-and-Tie Method
+   BY: ST
    ============================================================ */
 
 // ── Helpers ──────────────────────────────────────────────────
