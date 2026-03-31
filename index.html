@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bridge Tool</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Plotly for charts -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <!-- LEFT PANEL: Inputs -->
+    <div id="inputs">
+      <h2>Parameters</h2>
+      <label>Span Lengths (m)</label>
+      <input type="text" id="spans" value="15, 20, 15">
+
+      <label>Live Load</label>
+      <select id="loadType">
+        <option>Custom</option>
+      </select>
+
+      <button onclick="analyze()">Run Analysis</button>
+    </div>
+
+    <!-- RIGHT PANEL: Charts -->
+    <div id="charts">
+      <div id="momentChart"></div>
+      <div id="shearChart"></div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
