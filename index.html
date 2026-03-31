@@ -1,33 +1,219 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>LB tool test</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Link Beam STM Designer</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Plotly for charts -->
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
-  <div id="app">
-    <!-- LEFT PANEL: Inputs -->
-    <div id="inputs">
-      <h2>Parameters</h2>
-      <label>Span Lengths (m)</label>
-      <input type="text" id="spans" value="15, 20, 15">
 
-      <label>Live Load</label>
-      <select id="loadType">
-        <option>Custom</option>
-      </select>
+<div id="app">
 
-      <button onclick="analyze()">Run Analysis</button>
+  <!-- LEFT PANEL -->
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <h1>Link Beam<br><span>STM Designer</span></h1>
+      <p class="subtitle">ACI 318-19 Ch. 23 - Strut-and-Tie</p>
     </div>
 
-    <!-- RIGHT PANEL: Charts -->
-    <div id="charts">
-      <div id="momentChart"></div>
-      <div id="shearChart"></div>
+    <div class="input-section">
+      <div class="section-title">Geometry</div>
+      <div class="input-row">
+        <label>Span <em>l</em></label>
+        <div class="input-unit-wrap">
+          <input type="number" id="inp-l" value="1500" min="100" step="10">
+          <span class="unit">mm</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label>Depth <em>h</em></label>
+        <div class="input-unit-wrap">
+          <input type="number" id="inp-h" value="1600" min="100" step="10">
+          <span class="unit">mm</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label>Breadth <em>b</em></label>
+        <div class="input-unit-wrap">
+          <input type="number" id="inp-b" value="800" min="100" step="10">
+          <span class="unit">mm</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-section">
+      <div class="section-title">Materials</div>
+      <div class="input-row">
+        <label>f'<sub>c</sub></label>
+        <div class="input-unit-wrap">
+          <input type="number" id="inp-fc" value="85" min="20" max="120" step="1">
+          <span class="unit">MPa</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label>f<sub>y</sub></label>
+        <div class="input-unit-wrap">
+          <input type="number" id="inp-fy" value="420" min="250" max="700" step="10">
+          <span class="unit">MPa</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label>φ (STM)</label>
+        <div class="input-unit-wrap">
+          <input type="number" id="inp-phi" value="0.75" min="0.5" max="1.0" step="0.05">
+          <span class="unit">&mdash;</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-section">
+      <div class="section-title">Loading</div>
+      <div class="input-row">
+        <label>V<sub>u</sub></label>
+        <div class="input-unit-wrap">
+          <input type="number" id="inp-vu" value="7186" min="1" step="1">
+          <span class="unit">kN</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-section">
+      <div class="section-title">STM Parameters</div>
+      <div class="input-row">
+        <label>β<sub>s</sub> (strut)</label>
+        <div class="input-unit-wrap">
+          <input type="number" id="inp-bs" value="0.75" min="0.4" max="1.0" step="0.05">
+          <span class="unit">&mdash;</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label>β<sub>c</sub> (confine)</label>
+        <div class="input-unit-wrap">
+          <input type="number" id="inp-bc" value="1.0" min="1.0" max="2.0" step="0.1">
+          <span class="unit">&mdash;</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label>Target SR</label>
+        <div class="input-unit-wrap">
+          <input type="number" id="inp-sr" value="0.95" min="0.5" max="1.0" step="0.05">
+          <span class="unit">&mdash;</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <label>θ<sub>min</sub></label>
+        <div class="input-unit-wrap">
+          <input type="number" id="inp-thmin" value="25" min="15" max="45" step="1">
+          <span class="unit">deg</span>
+        </div>
+      </div>
+    </div>
+
+    <button id="btn-calc" onclick="calculate()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Calculate
+    </button>
+
+    <div class="reference">
+      <strong>Reference:</strong> El-Zoughiby et al., <em>Engineering Structures</em> 299 (2024) 117109
     </div>
   </div>
-  <script src="app.js"></script>
+
+  <!-- RIGHT PANEL -->
+  <div id="main">
+
+    <!-- MODEL TYPE BADGE -->
+    <div id="model-banner" class="banner banner-hidden">
+      <div id="model-badge"></div>
+      <div id="model-desc"></div>
+    </div>
+
+    <!-- STM DIAGRAM -->
+    <div class="card" id="diagram-card">
+      <div class="card-title">Strut-and-Tie Model Diagram</div>
+      <div id="stm-diagram-wrap">
+        <svg id="stm-svg" viewBox="0 0 900 380" preserveAspectRatio="xMidYMid meet"></svg>
+        <div id="diagram-placeholder">Enter parameters and click <strong>Calculate</strong> to generate the STM diagram.</div>
+      </div>
+    </div>
+
+    <!-- RESULTS GRID -->
+    <div id="results-grid">
+
+      <div class="card">
+        <div class="card-title">Geometry &amp; Model</div>
+        <table class="result-table" id="tbl-geometry">
+          <tbody>
+            <tr><td class="label">Model panels <em>n</em></td><td class="value" id="res-n">—</td><td class="unit-col"></td></tr>
+            <tr><td class="label">Strut-tie angle θ</td><td class="value" id="res-theta">—</td><td class="unit-col">deg</td></tr>
+            <tr><td class="label">Bearing length <em>l<sub>b</sub></em></td><td class="value" id="res-lb">—</td><td class="unit-col">mm</td></tr>
+            <tr><td class="label">Tie width <em>w<sub>t</sub></em></td><td class="value" id="res-wt">—</td><td class="unit-col">mm</td></tr>
+            <tr><td class="label">Strut width <em>w<sub>s</sub></em></td><td class="value" id="res-ws">—</td><td class="unit-col">mm</td></tr>
+            <tr><td class="label">Lever arm <em>z</em></td><td class="value" id="res-z">—</td><td class="unit-col">mm</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">STM Forces</div>
+        <table class="result-table" id="tbl-forces">
+          <tbody>
+            <tr><td class="label">Shear <em>V<sub>u</sub></em></td><td class="value" id="res-vu">—</td><td class="unit-col">kN</td></tr>
+            <tr><td class="label">Strut force <em>C<sub>u</sub></em></td><td class="value" id="res-cu">—</td><td class="unit-col">kN</td></tr>
+            <tr><td class="label">Horiz. tie <em>T<sub>hu</sub></em></td><td class="value" id="res-thu">—</td><td class="unit-col">kN</td></tr>
+            <tr><td class="label">Vert. tie <em>T<sub>vu</sub></em></td><td class="value" id="res-tvu">—</td><td class="unit-col">kN</td></tr>
+            <tr><td class="label">Moment <em>M<sub>u</sub></em></td><td class="value" id="res-mu">—</td><td class="unit-col">kN·m</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Stress Ratios</div>
+        <table class="result-table" id="tbl-sr">
+          <tbody>
+            <tr><td class="label">SR<sub>strut</sub></td><td class="value" id="res-sr-strut">—</td><td class="unit-col"></td></tr>
+            <tr><td class="label">SR<sub>node</sub></td><td class="value" id="res-sr-node">—</td><td class="unit-col"></td></tr>
+          </tbody>
+        </table>
+        <div id="sr-bars-wrap"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Reinforcement Required</div>
+        <table class="result-table" id="tbl-rebar">
+          <tbody>
+            <tr><td class="label">Long. steel <em>A<sub>sl</sub></em> (each face)</td><td class="value" id="res-asl">—</td><td class="unit-col">mm²</td></tr>
+            <tr><td class="label">Trans. steel <em>A<sub>sv</sub></em></td><td class="value" id="res-asv">—</td><td class="unit-col">mm²</td></tr>
+            <tr><td class="label">Min ρ<sub>v</sub> = 0.0025·b·s</td><td class="value" id="res-rho-v">—</td><td class="unit-col"></td></tr>
+            <tr><td class="label">Min ρ<sub>h</sub> = 0.0025·b·s</td><td class="value" id="res-rho-h">—</td><td class="unit-col"></td></tr>
+            <tr><td class="label">Max stirrup spacing</td><td class="value" id="res-smax">—</td><td class="unit-col">mm</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- DESIGN SUMMARY -->
+    <div class="card" id="summary-card">
+      <div class="card-title">Design Summary</div>
+      <div id="design-summary-wrap">
+        <div id="design-summary-placeholder">Results will appear here after calculation.</div>
+        <div id="design-summary" style="display:none">
+          <div class="summary-grid">
+            <div class="summary-block" id="sum-long"></div>
+            <div class="summary-block" id="sum-trans"></div>
+            <div class="summary-block" id="sum-horiz"></div>
+            <div class="summary-block" id="sum-anchor"></div>
+          </div>
+          <div class="summary-note" id="sum-note"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end #main -->
+</div><!-- end #app -->
+
+<script src="app.js"></script>
 </body>
 </html>
